@@ -1,3 +1,5 @@
+# vim:set et fileencoding=utf8 sts=0 sw=4 ts=4:
+
 """Helper methods used in UltiSnips snippets."""
 
 import string, vim, re
@@ -82,14 +84,36 @@ def get_comment_format():
 
 def make_box(twidth, bwidth=None):
     b, m, e, i = (s.strip() for s in get_comment_format())
+    m0 = m[0] if m else ''
     bwidth_inner = bwidth - 3 - max(len(b), len(i + e)) if bwidth else twidth + 2
-    sline = b + m + bwidth_inner * m[0] + 2 * m[0]
+    sline = b + m + bwidth_inner * m0 + 2 * m0
     nspaces = (bwidth_inner - twidth) // 2
     mlines = i + m + " " + " " * nspaces
     mlinee = " " + " "*(bwidth_inner - twidth - nspaces) + m
-    eline = i + m + bwidth_inner * m[0] + 2 * m[0] + e
+    eline = i + m + bwidth_inner * m0 + 2 * m0 + e
     return sline, mlines, mlinee, eline
 
 def foldmarker():
     "Return a tuple of (open fold marker, close fold marker)"
     return vim.eval("&foldmarker").split(",")
+
+
+def display_width(str):
+    """Return the required over-/underline length for str."""
+    try:
+        # Respect &ambiwidth and &tabstop, but old vim may not support this
+        return vim.strdisplaywidth(str)
+    except AttributeError:
+        # Fallback
+        from unicodedata import east_asian_width
+        result = 0
+        for c in str:
+            result += 2 if east_asian_width(c) in ('W', 'F') else 1
+        return result
+
+# http://stackoverflow.com/questions/2718196/find-all-chinese-text-in-a-string-using-python-and-regex
+def has_cjk(s):
+    """Detect if s contains CJK characters."""
+    cjk_re = re.compile(u'[⺀-⺙⺛-⻳⼀-⿕々〇〡-〩〸-〺〻㐀-䶵一-鿃豈-鶴侮-頻並-龎]', re.UNICODE)
+
+    return cjk_re.search(s) is not None
